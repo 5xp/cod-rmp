@@ -1,81 +1,57 @@
+const professorMap = new Map();
 const sectionSet = new Set();
 
-const sections = [];
+// Populates professorMap when a new section element is detected
+async function populateSection(html) {
+  const sectionName = html.innerText.match(/[^.*\n]*/)[0]; // doesn't work when waitlisted
+  const instructor = html.innerText.match(/Instructor: [^.*\n]*/)[0];
 
-function debounce(func, timeout = 300) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      func.apply(this, args);
-    }, timeout);
-  };
-}
-
-async function handleSection(section) {
-  const sectionName = section.innerText.match(/[^.*\n]*/)[0];
-
-  const instructor = section.innerText.match(/Instructor: [^.*\n]*/)[0];
-
+  // couldn't find professor name for some reason
   if (!instructor.startsWith("Instructor")) {
-    console.log(section);
+    console.error(html);
+    return;
   }
 
+  // no professor
   if (instructor === "Instructor: TBD") {
     return;
   }
 
+  // remove "Instructor: " from the name
   const instructorName = instructor.substring(12);
 
-  const sec = new Section(sectionName, instructorName);
-  await sec.fetchProfessor();
+  if (!professorMap.has(instructorName)) {
+    professorMap.set(instructorName, new Professor(instructorName));
+  }
 
-  // add a rating to the section html
-  const rating = document.createElement("div");
-  rating.className = "schedule-listitem-rating";
+  const prof = professorMap.get(instructorName);
 
-  rating.style.color = "#2b76f0";
-  rating.style.border = "0.07em solid #2b76f0";
-  rating.style.borderRadius = "0.5em";
-  rating.style.padding = "0.5em";
-  rating.style.margin = "0.5em";
-  rating.style.backgroundColor = "#b0ceff";
+  const section = new Section(sectionName, prof, html);
 
-  const ratingText = document.createElement("div");
-  ratingText.textContent = `Average RMP Rating: ${sec.rating} (${sec.numRatings} ratings)`;
-  rating.appendChild(ratingText);
-
-  // open the professor's ratemyprofessor page on click
-  rating.addEventListener("click", event => {
-    window.open(sec.getLink());
-    // prevent click from opening the section
-    event.preventDefault();
-    event.stopPropagation();
-  });
-
-  section.appendChild(rating);
+  await section.addRating();
 }
 
-const onUpdate = debounce(() => {
+// wait for 50 ms before handling new sections to prevent too many calls
+// async to prevent duplicate requests to ratemyprofessors.com
+const handleNewSections = debounce(async () => {
   for (section of sectionSet) {
-    handleSection(section);
+    await populateSection(section);
   }
-}, 100);
+  sectionSet.clear();
+}, 50);
 
 function handleNode(node) {
-  if (node.classList && node.classList.contains("schedule-listitem-rating")) {
+  // ignore nodes created by the extension
+  if (node.classList?.contains("schedule-listitem-rating")) {
     return;
   }
 
   const className = node.parentElement?.className;
-  const expanded = node.parentElement
-    ?.closest("div.schedule-listitem-newbody")
-    ?.querySelector("div.schedule-listitem-footerexpanded");
 
-  if (className === "schedule-availablesection" && expanded) {
+  if (className === "schedule-availablesection") {
     const section = node.parentElement;
     sectionSet.add(section);
-    onUpdate();
+    handleNewSections();
   }
 }
 

@@ -2,7 +2,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.contentScriptQuery === "queryTeachers") {
     request.lastName = request.lastName.toLowerCase();
     const name = `${request.lastName} ${request.firstInitial}`;
-    
+
     var url = "https://www.ratemyprofessors.com/graphql";
     var body = JSON.stringify({
       query: `query TeacherSearchResultsPageQuery(
@@ -108,7 +108,6 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
           sendResponse({ rating: null, numRatings: null, id: null, complete: false });
           return;
         }
-        console.log(json);
 
         const rating = ratings[0].node;
         sendResponse({ rating: rating.avgRating, numRatings: rating.numRatings, id: rating.legacyId, complete: true });
