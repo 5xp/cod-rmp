@@ -1,10 +1,5 @@
 class Professor {
-  courses = [];
-  constructor(instructorName, className) {
-    if (!this.courses.includes(className)) {
-      this.courses.push(className);
-    }
-
+  constructor(instructorName) {
     this.instructorName = instructorName;
 
     const [lastName, firstInitial] = instructorName.split(", ");
