@@ -1,0 +1,14 @@
+{
+  "name": "College of DuPage - Rate My Professors",
+  "description": "Shows inline professor ratings for College of DuPage schedule planner",
+  "version": "1.0",
+  "manifest_version": 3,
+  "content_scripts": [{
+    "matches": ["https://selfserv.cod.edu/Student/Planning/DegreePlans"],
+    "js": ["section.js", "script.js"]
+  }],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": ["https://www.ratemyprofessors.com/"]
+}
